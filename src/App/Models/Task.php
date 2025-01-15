@@ -3,16 +3,15 @@
 namespace App\Models;
 
 use PDO;
+use App\Database;
 
 class Task
 {
+    public function __construct(private Database $database)
+    {}  
     public function getData(): array
     {
-        $dsn = "mysql:host=localhost;dbname=tasksdb;port=2200";
-
-        $pdo = new PDO($dsn,"root","1234", [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        ]);
+        $pdo = $this->database->getConnection();
 
         $stmt = $pdo->query("SELECT * FROM tasks");
 

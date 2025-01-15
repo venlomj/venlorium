@@ -3,22 +3,43 @@
 namespace App\Controllers;
 
 use App\Models\Task;
+use Framework\Viewer;
 
 class Tasks
 {
+    public function __construct(private Viewer $viewer, private Task $model)
+    {}
     public function index()
     {
-        $model = new Task;
-        $tasks = $model->getData();
+        $tasks = $this->model->getData();
 
-        require "views/tasks_index.php";
+        echo $this->viewer->render("shared/header.php", [
+            "title" => "Products"
+        ]);
+        
+
+        echo $this->viewer->render("Tasks/index.php", [
+            "tasks"=> $tasks
+        ]);
     }
 
 
-    public function show()
+    public function show(string $id)
     {
-        require "views/tasks_show.php";
+        $viewer = new Viewer;
 
+        echo $this->viewer->render("shared/header.php", [
+            "title" => "Product"
+        ]);
+
+        echo $this->viewer->render("Tasks/show.php", [
+            "id"=> $id
+        ]);
+    }
+
+    public function showPage(string $title, string $id, string $page)
+    {
+        echo $title, " ", $id, " ", $page;
     }
 
     // API endpoint
