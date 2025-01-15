@@ -1,0 +1,62 @@
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Composer dependencies
+/vendor/
+
+/node_modules/
+
+# Environment and configuration files
+.env
+*.env.local
+.env.*
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs and debug files
+/logs/
+/storage/logs/
+*.log
+*.debug
+
+# Cache and session files
+/storage/cache/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+
+# Public uploads or temporary files
+/public/uploads/
+*.tmp
+
+# PHPUnit
+/phpunit.xml
+/phpunit.xml.dist
+
+# System-generated files
+/public/.htaccess
+/public/index.php~
+
+# Exclude built documentation (if applicable)
+docs/build/
+
+# Exclude coverage reports
+/coverage/
+
+# Exclude Composer lock file (optional)
+/composer.lock
+
+# Nginx/Apache config backup
+*~
+*.bak
+
+# Ignore user-specific configuration files
+*.local.php
+*.user.ini
+*.idea
+
