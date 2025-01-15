@@ -1,12 +1,14 @@
-
-
 <h1>Tasks</h1>
+
+<a href="/tasks/new">New Task</a>
 
 <?php foreach ($tasks as $task): ?>
 
-    <h2><?= htmlspecialchars($task["name"]) ?></h2>
-    <p><?= htmlspecialchars($task["description"]) ?></p>
-
+    <h2>
+        <a href="/tasks/<?=$task["id"] ?>/show">
+            <?= htmlspecialchars($task["name"]) ?>
+        </a>
+    </h2>
 <?php endforeach; ?>
 
 </body>

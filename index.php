@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types= 1);
+
 $path = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
 
 spl_autoload_register(function (string $class_name) {
@@ -19,8 +21,13 @@ $router->add("/tasks", ["controller" => "tasks", "action" => "index"]);
 $router->add("/", ["controller" => "home", "action" => "index"]);
 $router->add("/{controller}/{action}");
 
+$container = new Framework\Container;
 
 
-$dispatcher = new Framework\Dispatcher($router); 
+$container->set(App\Database::class, function() {
+    return new App\Database("localhost", "tasksdb", "root", "1234", "2200");
+});
+
+$dispatcher = new Framework\Dispatcher($router, $container); 
 
 $dispatcher->handle($path);

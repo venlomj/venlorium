@@ -2,19 +2,16 @@
 
 namespace App\Models;
 
-use PDO;
-use App\Database;
+use Framework\Model;
 
-class Task
+class Task extends Model
 {
-    public function __construct(private Database $database)
-    {}  
-    public function getData(): array
+    protected $table = "tasks";
+
+    protected function validate(array $data): void
     {
-        $pdo = $this->database->getConnection();
-
-        $stmt = $pdo->query("SELECT * FROM tasks");
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($data["name"])) {
+            $this->addError("name","Name is required");
+        }
     }
 }

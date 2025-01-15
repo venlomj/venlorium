@@ -11,7 +11,7 @@ class Tasks
     {}
     public function index()
     {
-        $tasks = $this->model->getData();
+        $tasks = $this->model->findAll();
 
         echo $this->viewer->render("shared/header.php", [
             "title" => "Products"
@@ -26,14 +26,18 @@ class Tasks
 
     public function show(string $id)
     {
-        $viewer = new Viewer;
+        $task = $this->model->find($id);
+
+        // if ($task === false) {
+        //     throw new PageNotFoundException("Page not found");
+        // }
 
         echo $this->viewer->render("shared/header.php", [
             "title" => "Product"
         ]);
 
         echo $this->viewer->render("Tasks/show.php", [
-            "id"=> $id
+            "task"=> $task
         ]);
     }
 
@@ -42,13 +46,64 @@ class Tasks
         echo $title, " ", $id, " ", $page;
     }
 
+    public function new()
+    {
+        echo $this->viewer->render("shared/header.php", [
+            "title"=> ""  
+        ]);
+
+        echo $this->viewer->render("Tasks/new.php");
+    }
+
+    public function create()
+    {
+        $data = [
+            "name" => $_POST["name"],
+            "description" => empty($_POST["description"]) ? null : $_POST["description"],
+            "priority" => intval($_POST["priority"]),
+            "is_completed" => isset($_POST["is_completed"]) ? '1' : '0',
+        ];
+        
+        if ($this->model->insert($data)) {
+            header("Location: /tasks/{$this->model->getInsertedId()}/show");
+            exit;
+        } else {
+            echo $this->viewer->render("shared/header.php", [
+                "title"=> ""  
+            ]);
+    
+            echo $this->viewer->render("Tasks/new.php", [
+                "errors" => $this->model->getErrors()
+            ]);
+        }
+    } 
+
+    public function edit(string $id)
+    {
+        $task = $this->model->find($id);
+
+        if ($task === false) {
+
+            throw new PageNotFoundException("Product not found");
+
+        }
+
+        echo $this->viewer->render("shared/header.php", [
+            "title" => "Edit Task"
+        ]);
+
+        echo $this->viewer->render("Products/edit.php", [
+            "task" => $task
+        ]);
+    }
+
     // API endpoint
     public function get()
     {
         require "src/models/task.php";
     
         $model = new Task;
-        $tasks = $model->getData();
+        $tasks = $model->findAll();
     
         // Set the header for JSON response
         header('Content-Type: application/json');
