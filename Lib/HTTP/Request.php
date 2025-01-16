@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Lib;
+namespace Lib\HTTP;
 
 // Definieert de Request-klasse voor het beheren en verwerken van HTTP-verzoeken
 class Request {

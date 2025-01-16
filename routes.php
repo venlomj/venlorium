@@ -1,7 +1,9 @@
 <?php
 
-use App\Controllers\AuthController;
-use App\Lib\Container;
+use Lib\Core\Container;
+
+
+
 
 $router = Container::get("router");
 

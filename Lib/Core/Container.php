@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Lib;
+namespace Lib\Core;
 
 // Definieert een klasse genaamd Container in de namespace App\Lib.
 // Deze klasse fungeert als een eenvoudige dependency injection container.

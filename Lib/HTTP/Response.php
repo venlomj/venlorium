@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Lib;
+namespace Lib\HTTP;
 
 // Definieert de Response-klasse voor het beheren en verzenden van HTTP-responsen
 class Response {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Lib;
+namespace Lib\Database;
 
 class QueryBuilder {
     public ?string $table = null;

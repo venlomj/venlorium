@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Lib;
+namespace Lib\Utilities;
 
 // Definieert de Collection-klasse die het JsonSerializable-interface implementeert
 // Dit maakt het mogelijk om een Collection-klasse eenvoudig te serialiseren naar JSON.

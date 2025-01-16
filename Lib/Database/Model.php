@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Lib;
+namespace Lib\Database;
 
 class Model extends \stdClass implements \JsonSerializable {
     protected string $primaryKey = "id";

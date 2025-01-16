@@ -1,7 +1,12 @@
 <?php
 
-namespace App\Lib;
-use App\Lib\Router;
+namespace Lib\Core;
+
+use Lib\Database\Database;
+use Lib\HTTP\Router;
+use Lib\Utilities\Config;
+
+
 
 
 // Definieert de Kernel-klasse in de namespace App\Lib
@@ -36,7 +41,7 @@ class Kernel {
     // De variabele $router wordt geïnitialiseerd met een instantie van de Router-klasse en
     // vervolgens wordt de 'run()' methode van de router aangeroepen om de route-afhandeling te starten.
     private function loadRoutes() {
-        $router = require_once __DIR__ ."/../routes.php";
+        $router = require_once __DIR__ ."/../../routes.php";
         $this->router = $router;
         $this->router->run();
     }

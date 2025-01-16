@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Lib;
+namespace Lib\Utilities;
 
 // Definieert een klasse genaamd Config in de namespace App\Lib.
 class Config {
     // Methode om configuratie-instellingen te laden vanuit een .env-bestand.
     public static function load() {
         // Bepaalt het pad naar het .env-bestand dat zich één niveau hoger bevindt dan de huidige directory.
-        $path = __DIR__ . "/../.env";
+        $path = __DIR__ . "/../../.env";
 
         // Leest de inhoud van het .env-bestand regel voor regel:
         // - `FILE_IGNORE_NEW_LINES`: Haalt de nieuwe regelkarakters aan het einde van regels weg.

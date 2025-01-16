@@ -1,6 +1,9 @@
 <?php
 
-namespace App\Lib;
+namespace Lib\Database;
+
+use Lib\Utilities\Config;
+
 
 // Definieert de Database-klasse in de namespace App\Lib
 class Database {

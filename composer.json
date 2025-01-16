@@ -1,0 +1,20 @@
+{
+  "name": "vendor/venlorium",
+  "description": "A custom PHP framework for building a RESTful API.",
+  "type": "library",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "App\\": "App",
+      "Lib\\": "Lib"
+    }
+  },
+  "authors": [
+    {
+      "name": "venlomj",
+      "email": "venlo.mj@hotmail.nl"
+    }
+  ],
+  "minimum-stability": "stable",
+  "require": {}
+}

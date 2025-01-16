@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Lib;
+namespace Lib\Core;
+
+use Lib\HTTP\Request;
 
 // Definieert de BaseController-klasse die fungeert als basiscontroller voor andere controllers
 class BaseController {

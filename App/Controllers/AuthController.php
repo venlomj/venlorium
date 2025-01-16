@@ -2,8 +2,8 @@
 
 namespace App\Controllers;
 
-use App\Lib\BaseController;
 use App\Models\User;
+use Lib\Core\BaseController;
 
 class AuthController extends BaseController {
     public function index() {

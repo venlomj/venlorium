@@ -1,6 +1,10 @@
 <?php
 
-namespace App\Lib;
+namespace Lib\HTTP;
+
+use Lib\Core\Container;
+
+
 
 // Definieert de Router-klasse in de namespace App\Lib
 class Router {
