@@ -22,11 +22,30 @@ class Router {
     // Method to add GET routes
     public function get(string $route, $callback) {
         $this->add($route, "get", $callback);
+        return $this;
     }
 
     // Method to add POST routes
     public function post(string $route, $callback) {
         $this->add($route, "post", $callback);
+        return $this;
+    }
+
+    public function put(string $route, $callback) {
+        $this->add($route,"put", $callback);
+        return $this;
+    }
+
+    public function delete(string $route, $callback) {
+        $this->add($route,"delete", $callback);
+        return $this;
+    }
+    
+    public function middleware(...$args) {
+        if ($this->current_route) {
+            $this->routes[$this->current_route]["middleware"] = $args;
+        }
+        return $this;
     }
 
     // Run the router and match routes

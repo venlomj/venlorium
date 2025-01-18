@@ -72,14 +72,40 @@ class Model extends \stdClass implements \JsonSerializable {
         return $model->first();
     }
 
+    public static function hydrate(array $data): self {
+        $instance = new static();
+        return $instance->fill($data);
+    }
+    
+
     public function toArray(): array {
         return $this->getAttributes();
     }
     
     
-    public static function where(string $field, string $operator, $value): QueryBuilder {
+    // public static function where(string $field, string $operator, $value): QueryBuilder {
+    //     $instance = new static();
+    //     return $instance->queryBuilder->where($field, $operator, $value);
+    // }
+
+    public static function where(string $field, string $operator, mixed $value): QueryBuilder {
         $instance = new static();
         return $instance->queryBuilder->where($field, $operator, $value);
+    }
+    
+    public static function firstWhere(string $field, string $operator, mixed $value): ?self {
+        $result = self::where($field, $operator, $value)->first();
+        if ($result) {
+            return (new static())->fill($result); // Omzetten naar een User-object
+        }
+        return null;
+    }
+    
+
+public static function with(array $relations): QueryBuilder
+    {
+        $instance = new static();
+        return $instance->queryBuilder->with($relations);
     }
 
     public static function select(string $fields = "*"): QueryBuilder {

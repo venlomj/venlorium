@@ -5,7 +5,9 @@ namespace App\Controllers;
 use App\Models\User;
 use Lib\Core\BaseController;
 use Lib\Database\QB;
+use Lib\HTTP\Request;
 use Lib\HTTP\Response;
+use Lib\Security\Authentication;
 use OpenApi\Annotations as OA;
 
 /**
@@ -27,7 +29,26 @@ class AuthController extends BaseController {
         $users = User::all();
         return $users;
     }
+
+    public function login() {
+        if (Authentication::attempt(Request::body("email"), Request::body("password"))) {
+            $token = Authentication::getUser()->createToken();
+            return ["content" => ["token" => $token]];
+        }
+
+        Response::json(["message"=> "Invalid credentials"], 401);
+    }
     
+    public function register() {
+        $user = new User();
+        $user->email = Request::body("email");
+        $user->password = password_hash(Request::body("password"), PASSWORD_BCRYPT);
+        $user->name = Request::body("name");
+        $user->save();
+
+        return ["content" => $user];
+    }
+
     public function find($id) {
         $user = User::find($id);
         if ($user) {
@@ -38,28 +59,8 @@ class AuthController extends BaseController {
         }
         return Response::json(["error" => "User not found"], 404);
     }
-        
-    
-    
-    
 
-    public function create() {
-        // Example data to create a user
-        $data = [
-            'name' => 'John Doe',
-            'email' => 'john.doe@example.com',
-            'password' => password_hash('secret', PASSWORD_DEFAULT)
-        ];
-
-        $user = new User();
-        $user->fill($data);
-        if ($user->save()) {
-            return ["success" => "User created successfully"];
-        }
-        return ["error" => "Failed to create user"];
+    public function test() {
+        Response::json(["message"=> "You are now authorized to enter this route"]);
     }
-
-    // public function test($name) {
-    //     return ["message" => "My name is $name"];
-    // }
 }

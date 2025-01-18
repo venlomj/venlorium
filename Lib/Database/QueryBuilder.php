@@ -17,6 +17,7 @@ class QueryBuilder {
     private ?string $dmlType = null;
     private array $joins = [];
     private array $data = [];
+    protected array $relations = [];
 
 
     protected ?string $query = null;
@@ -54,11 +55,49 @@ class QueryBuilder {
         return $this;
     }
 
-    public function where(string $field, string $operator, string|int|float|null $value): static
+    // public function where(string $field, string $operator, string|int|float|null $value): static
+    // {
+    //     $placeholder = ":" . str_replace(".","_", $field) . count($this->bindings);
+    //     $this->where[] = "$field $operator $placeholder";
+    //     $this->bindings[$placeholder] = $value;
+    //     return $this;
+    // }
+
+    // public function where(array $conditions): static
+    // {
+    //     foreach ($conditions as $condition) {
+    //         $field = $condition[0];
+    //         $operator = $condition[1];
+    //         $value = $condition[2];
+
+    //         $placeholder = ":" . str_replace(".", "_", $field) . count($this->bindings);
+    //         $this->where[] = "$field $operator $placeholder";
+    //         $this->bindings[$placeholder] = $value;
+    //     }
+    //     return $this;
+    // }
+
+    
+    // public function where(string $column, string $operator, mixed $value): self  
+    // {  
+    //     $placeholder = ':' . $column;  
+    //     $this->query .= (str_contains($this->query, 'WHERE') ? " AND" : " WHERE") . " $column $operator $placeholder";  
+    //     $this->bindings[$placeholder] = $value;  
+    //     return $this;  
+    // } 
+    
+    public function where(string $column, string $operator, mixed $value): self
     {
-        $placeholder = ":" . str_replace(".","_", $field) . count($this->bindings);
-        $this->where[] = "$field $operator $placeholder";
-        $this->bindings[$placeholder] = $value;
+        $placeholder = ':' . str_replace('.', '_', $column) . count($this->bindings); // Voeg een uniek nummer toe
+        $this->where[] = "$column $operator $placeholder";
+        $this->bindings[$placeholder] = $value;  
+        return $this;
+    }
+
+
+    public function with(array $relations): self
+    {
+        $this->relations = $relations;
         return $this;
     }
 
@@ -130,6 +169,11 @@ class QueryBuilder {
             $sql .= " OFFSET $this->offset";
         }
 
+          // Debug placeholders en bindings
+        error_log("Query: $sql");
+        error_log("Bindings: " . print_r($this->bindings, true));
+    
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($this->bindings);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -150,30 +194,42 @@ class QueryBuilder {
         return (int) $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     }
 
-    public function first(): ?array
+    // public function first(): ?array
+    // {
+    //     $this->limit(1);
+    //     $result = $this->get();
+    //     return $result[0] ?? null;
+    // }
+
+    public function first(): ?Model
     {
         $this->limit(1);
         $result = $this->get();
-        return $result[0] ?? null;
+        if ($result) {
+            $model = clone $this->model; // Clone the model instance
+            return $model->fill($result[0]); // Populate the model with the data
+        }
+        return null; // Return null if no results
     }
 
+
     public function find(int|string $id, string $primaryKey = 'id'): ?array
-{
-    $this->dmlType = self::DML_TYPE_SELECT;
+    {
+        $this->dmlType = self::DML_TYPE_SELECT;
 
-    // Default fields to '*' if not explicitly set
-    $fields = $this->fields ?: ['*'];
+        // Default fields to '*' if not explicitly set
+        $fields = $this->fields ?: ['*'];
 
-    $sql = "SELECT " . implode(', ', $fields) . " FROM $this->table WHERE $primaryKey = :id LIMIT 1";
+        $sql = "SELECT " . implode(', ', $fields) . " FROM $this->table WHERE $primaryKey = :id LIMIT 1";
 
-    $stmt = $this->pdo->prepare($sql);
-    $stmt->bindValue(':id', $id);
-    $stmt->execute();
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':id', $id);
+        $stmt->execute();
 
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    return $result ?: null;
-}
+        return $result ?: null;
+    }
 
 
     public function insert(array $data): bool
