@@ -6,9 +6,22 @@ use App\Models\User;
 use Lib\Core\BaseController;
 use Lib\Database\QB;
 use Lib\HTTP\Response;
+use OpenApi\Annotations as OA;
 
-
+/**
+ * @OA\Info(title="User API", version="1.0.0")
+ */
 class AuthController extends BaseController {
+    /**
+     * @OA\Get(
+     *     path="/api/users",
+     *     summary="Get list of users",
+     *     @OA\Response(
+     *         response="200",
+     *         description="List of users"
+     *     )
+     * )
+     */
     public function index() {
         // Fetch all users from the database
         $users = User::all();
