@@ -4,7 +4,6 @@ namespace App\Controllers;
 
 use App\Models\User;
 use Lib\Core\BaseController;
-use Lib\Database\QB;
 use Lib\HTTP\Request;
 use Lib\HTTP\Response;
 use Lib\Security\Authentication;
@@ -30,15 +29,55 @@ class AuthController extends BaseController {
         return $users;
     }
 
+    /**
+ * @OA\Post(
+ *     path="/api/auth/login",
+ *     summary="Authenticate a user and generate a token",
+ *     description="Allows a user to log in using their email and password. Returns an authentication token upon successful login.",
+ *     operationId="login",
+ *     tags={"Authentication"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         description="User credentials",
+ *         @OA\JsonContent(
+ *             required={"email", "password"},
+ *             @OA\Property(property="email", type="string", format="email", example="user@example.com"),
+ *             @OA\Property(property="password", type="string", format="password", example="password123")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response="200",
+ *         description="Login successful",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="content", type="object",
+ *                 @OA\Property(property="token", type="string", example="abcdef123456")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response="401",
+ *         description="Invalid credentials",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="Invalid credentials")
+ *         )
+ *     )
+ * )
+ */
     public function login() {
         if (Authentication::attempt(Request::body("email"), Request::body("password"))) {
-            $token = Authentication::getUser()->createToken();
-            return ["content" => ["token" => $token]];
+            $user = Authentication::getUser();
+            $token = $user->createToken();
+
+            return ["data" => ["token" => $token, "user" => [
+                "id"=> $user->id,
+                "name"=> $user->name,
+                "email"=> $user->email
+            ]]];
         }
 
         Response::json(["message"=> "Invalid credentials"], 401);
     }
-    
+
     public function register() {
         $user = new User();
         $user->email = Request::body("email");
@@ -46,7 +85,7 @@ class AuthController extends BaseController {
         $user->name = Request::body("name");
         $user->save();
 
-        return ["content" => $user];
+        return ["data" => $user];
     }
 
     public function find($id) {

@@ -7,279 +7,167 @@ use PDO;
 class QueryBuilder {
     private PDO $pdo;
     private ?Model $model;
-    private string $table;
     private array $fields = [];
     private array $where = [];
     private array $bindings = [];
     private ?int $limit = null;
     private ?int $offset = null;
-    private ?string $orderBy = null;
-    private ?string $dmlType = null;
+    private array $orderBy = [];
     private array $joins = [];
-    private array $data = [];
-    protected array $relations = [];
+    private array $with = [];
+    private array $eagerLoad = [];
+    private ?string $table = null;
 
-
-    protected ?string $query = null;
-
+    // DML (Data Manipulation Language) constanten voor de querytypes
     const DML_TYPE_SELECT = 'SELECT';
     const DML_TYPE_INSERT = 'INSERT';
     const DML_TYPE_UPDATE = 'UPDATE';
     const DML_TYPE_DELETE = 'DELETE';
 
-    public function __construct(Model $model = null)
-    {
-        $this->query = "";
-        $this->pdo = Database::$pdo;
+    // Constructor, maakt verbinding met de database en stelt de tabel in
+    public function __construct(Model $model = null) {
+        $this->pdo = Database::$pdo;  // Database connectie via PDO
         $this->model = $model;
         if ($model) {
-            $this->table = $model->table;
+            $this->table = $model->table;  // Stel de tabel in op basis van het model
         }
     }
 
-    public function getDmlType(): ?string
-    {
-        return $this->dmlType ?? self::DML_TYPE_SELECT;
-    }
-    
-    public function table(string $table): static
-    {
+    // Stel de tabelnaam in voor de query
+    public function table(string $table): self {
         $this->table = $table;
         return $this;
     }
 
-    public function select(string $fields): static
-    {
-        $this->dmlType = self::DML_TYPE_SELECT;
-        $this->fields = !empty($fields) ? $fields : ["*"];
+    // Stel de velden in die geselecteerd moeten worden
+    public function select(string $fields = "*"): self {
+        $this->fields = explode(',', $fields);
         return $this;
     }
 
-    // public function where(string $field, string $operator, string|int|float|null $value): static
-    // {
-    //     $placeholder = ":" . str_replace(".","_", $field) . count($this->bindings);
-    //     $this->where[] = "$field $operator $placeholder";
-    //     $this->bindings[$placeholder] = $value;
-    //     return $this;
-    // }
-
-    // public function where(array $conditions): static
-    // {
-    //     foreach ($conditions as $condition) {
-    //         $field = $condition[0];
-    //         $operator = $condition[1];
-    //         $value = $condition[2];
-
-    //         $placeholder = ":" . str_replace(".", "_", $field) . count($this->bindings);
-    //         $this->where[] = "$field $operator $placeholder";
-    //         $this->bindings[$placeholder] = $value;
-    //     }
-    //     return $this;
-    // }
-
-    
-    // public function where(string $column, string $operator, mixed $value): self  
-    // {  
-    //     $placeholder = ':' . $column;  
-    //     $this->query .= (str_contains($this->query, 'WHERE') ? " AND" : " WHERE") . " $column $operator $placeholder";  
-    //     $this->bindings[$placeholder] = $value;  
-    //     return $this;  
-    // } 
-    
-    public function where(string $column, string $operator, mixed $value): self
-    {
-        $placeholder = ':' . str_replace('.', '_', $column) . count($this->bindings); // Voeg een uniek nummer toe
-        $this->where[] = "$column $operator $placeholder";
-        $this->bindings[$placeholder] = $value;  
+    // Voeg een WHERE clausule toe aan de query
+    public function where(string $field, string $operator, mixed $value): self {
+        $placeholder = ":" . str_replace(".", "_", $field) . count($this->bindings);
+        $this->where[] = "$field $operator $placeholder";  // Voeg de voorwaarde toe aan de WHERE
+        $this->bindings[$placeholder] = $value;  // Koppel de waarde aan de placeholder
         return $this;
     }
 
-
-    public function with(array $relations): self
-    {
-        $this->relations = $relations;
+    // Voeg een relationele query toe voor 'eager loading'
+    public function with($relations): self {
+        $this->eagerLoad = is_string($relations) ? func_get_args() : $relations;
         return $this;
     }
 
-    public function limit(int $limit): static
-    {
+    // Voeg een JOIN clausule toe aan de query
+    public function join(string $table, string $first, string $operator, string $second, string $type = 'INNER'): self {
+        $this->joins[] = "$type JOIN $table ON $first $operator $second";  // Voeg JOIN toe
+        return $this;
+    }
+
+    // Voeg een ORDER BY clausule toe aan de query
+    public function orderBy(string $field, string $direction = 'ASC'): self {
+        $this->orderBy[] = "$field $direction";  // Voeg de volgorde toe
+        return $this;
+    }
+
+    // Stel een limiet in voor het aantal resultaten
+    public function limit(int $limit): self {
         $this->limit = $limit;
         return $this;
     }
 
-    public function offset(int $offset): static
-    {
+    // Stel een offset in voor het starten vanaf een bepaald record
+    public function offset(int $offset): self {
         $this->offset = $offset;
         return $this;
     }
 
-    public function orderBy(string $field, string $direction = 'ASC'): static
-    {
-        $this->orderBy[] = "$field $direction";
-        return $this;
-    }
-
-    public function paginate(int $perPage, int $currentPage): array
-    {
-        $this->limit = $perPage;
-        $this->offset = ($currentPage -1) * $perPage;
-
-        $results = $this->get();
-        $total = $this->count();
-
-        return [
-            "data" => $results,
-            "total"=> $total,
-            "per_page"=> $perPage,
-            "current_page"=> $currentPage,
-            "last_page" => ceil($total / $perPage),
-        ];
-    }
-
-    public function join(string $table, string $firstColumn, string $secondColumn, string $operator, string $joinType = 'INNER'): static
-    {
-        $this->joins[] = "$joinType JOIN $table ON $firstColumn $operator $secondColumn";
-        return $this;
-    }
-
-    public function get(): array
-    {
-        $this->dmlType = self::DML_TYPE_SELECT;
-
-        // Ensure that fields are set before using them in the query
-        if (empty($this->fields)) {
-            $this->fields = ['*']; // Default to selecting all columns if fields are empty
-        }
-
-        $sql = "SELECT " . implode(', ', $this->fields) . " FROM $this->table";
-
+    // Voer de SELECT query uit en retourneer de resultaten
+    public function get(): array {
+        $fields = !empty($this->fields) ? implode(', ', $this->fields) : '*';  // Velden om op te halen
+        $sql = "SELECT $fields FROM {$this->table}";  // Begin van de query
+    
+        // Voeg JOIN clausules toe als die er zijn
         if (!empty($this->joins)) {
             $sql .= " " . implode(' ', $this->joins);
         }
-        if (!empty($this->where)) {
-            $sql .= " WHERE " . implode(' AND ', $this->where);
-        }
-        if ($this->orderBy) {
-            $sql .= " ORDER BY $this->orderBy";
-        }
-        if ($this->limit !== null) {
-            $sql .= " LIMIT $this->limit";
-        }
-        if ($this->offset !== null) {
-            $sql .= " OFFSET $this->offset";
-        }
-
-          // Debug placeholders en bindings
-        error_log("Query: $sql");
-        error_log("Bindings: " . print_r($this->bindings, true));
     
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($this->bindings);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-
-    public function count(): int
-    {
-        $sql = "SELECT COUNT(*) as count FROM $this->table";
-
+        // Voeg WHERE clausule toe als die er is
         if (!empty($this->where)) {
             $sql .= " WHERE " . implode(' AND ', $this->where);
         }
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($this->bindings);
-
-        return (int) $stmt->fetch(PDO::FETCH_ASSOC)['count'];
-    }
-
-    // public function first(): ?array
-    // {
-    //     $this->limit(1);
-    //     $result = $this->get();
-    //     return $result[0] ?? null;
-    // }
-
-    public function first(): ?Model
-    {
-        $this->limit(1);
-        $result = $this->get();
-        if ($result) {
-            $model = clone $this->model; // Clone the model instance
-            return $model->fill($result[0]); // Populate the model with the data
+    
+        // Voeg ORDER BY clausule toe als die er is
+        if (!empty($this->orderBy)) {
+            $sql .= " ORDER BY " . implode(', ', $this->orderBy);
         }
-        return null; // Return null if no results
-    }
-
-
-    public function find(int|string $id, string $primaryKey = 'id'): ?array
-    {
-        $this->dmlType = self::DML_TYPE_SELECT;
-
-        // Default fields to '*' if not explicitly set
-        $fields = $this->fields ?: ['*'];
-
-        $sql = "SELECT " . implode(', ', $fields) . " FROM $this->table WHERE $primaryKey = :id LIMIT 1";
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':id', $id);
-        $stmt->execute();
-
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        return $result ?: null;
-    }
-
-
-    public function insert(array $data): bool
-    {
-        $this->dmlType = self::DML_TYPE_INSERT;
-        $this->data = $data;
-
-        $fields = implode(', ', array_keys($data));
-        $placeholders = ':' . implode(', :', array_keys($data));
-
-        $sql = "INSERT INTO $this->table ($fields) VALUES ($placeholders)";
-
-        $stmt = $this->pdo->prepare($sql);
-        foreach ($data as $key => $value) {
-            $stmt->bindValue(":$key", $value);
+    
+        // Voeg LIMIT en OFFSET toe als die er zijn
+        if ($this->limit !== null) {
+            $sql .= " LIMIT {$this->limit}";
         }
-
-        return $stmt->execute();
+    
+        if ($this->offset !== null) {
+            $sql .= " OFFSET {$this->offset}";
+        }
+    
+        $stmt = $this->pdo->prepare($sql);  // Bereid de query voor
+        $stmt->execute($this->bindings);  // Voer de query uit met de bindings
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);  // Haal de resultaten op
+    
+        // Als er een model is en er eager loading is ingesteld, laad de relaties
+        if ($this->model && !empty($this->eagerLoad)) {
+            foreach ($results as &$result) {
+                $model = clone $this->model;
+                $model->fill($result);  // Vul het model met de data
+                $model->load($this->eagerLoad);  // Laad de relaties
+                $result = $model->toArray();  // Zet het model om naar een array
+            }
+        }
+    
+        return $results;
     }
 
-    public function update(int|string $id, array $data): bool
-    {
-        $this->dmlType = self::DML_TYPE_UPDATE;
-        $this->data = $data;
-
-        $updates = [];
-        foreach ($data as $key => $value) {
-            $updates[] = "$key = :$key";
+    // Haal het eerste resultaat op
+    public function first(): ?Model {
+        $this->limit = 1;  // Beperk de resultaten tot 1
+        $results = $this->get();
+        
+        if (!empty($results)) {
+            return $this->model ? $this->model->fill($results[0]) : null;
         }
-
-        $sql = "UPDATE $this->table SET " . implode(', ', $updates) . " WHERE id = :id";
-
-        $stmt = $this->pdo->prepare($sql);
-        foreach ($data as $key => $value) {
-            $stmt->bindValue(":$key", $value);
-        }
-        $stmt->bindValue(':id', $id);
-
-        return $stmt->execute();
+        
+        return null;
     }
 
-    public function delete(int|string $id): bool
-    {
-        $this->dmlType = self::DML_TYPE_DELETE;
+    // Voer de INSERT query uit om gegevens in te voegen
+    public function insert(array $data): bool {
+        $fields = array_keys($data);  // Haal de velden op
+        $placeholders = array_map(fn($field) => ":$field", $fields);  // Maak placeholders voor de velden
+        
+        $sql = "INSERT INTO {$this->table} (" . implode(', ', $fields) . 
+               ") VALUES (" . implode(', ', $placeholders) . ")";  // Bouw de INSERT query op
+        
+        $stmt = $this->pdo->prepare($sql);  // Bereid de query voor
+        return $stmt->execute($data);  // Voer de query uit met de data
+    }
 
-        $sql = "DELETE FROM $this->table WHERE id = :id";
+    // Voer de UPDATE query uit om gegevens te updaten
+    public function update(int|string $id, array $data): bool {
+        $fields = array_map(fn($field) => "$field = :$field", array_keys($data));  // Maak de UPDATE velden
+        
+        $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . 
+               " WHERE id = :id";  // Bouw de UPDATE query op
+        
+        $stmt = $this->pdo->prepare($sql);  // Bereid de query voor
+        return $stmt->execute([...$data, 'id' => $id]);  // Voer de query uit met de data en ID
+    }
 
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':id', $id);
-
-        return $stmt->execute();
+    // Voer de DELETE query uit om een record te verwijderen
+    public function delete(int|string $id): bool {
+        $sql = "DELETE FROM {$this->table} WHERE id = :id";  // Bouw de DELETE query op
+        $stmt = $this->pdo->prepare($sql);  // Bereid de query voor
+        return $stmt->execute(['id' => $id]);  // Voer de query uit met de ID
     }
 }

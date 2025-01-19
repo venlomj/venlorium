@@ -16,11 +16,6 @@ class User extends Model {
     // One-to-many relationship: A user has many roles
     public function roles()
     {
-        return $this->hasMany(Role::class, 'user_id');
-    }
-
-    public static function firstWhere(string $field, string $operator, mixed $value): ?self {
-        $result = self::where($field, $operator, $value)->first();
-        return $result ? (new static())->fill($result) : null;
+        return $this->hasMany(Role::class);
     }
 }
